@@ -258,6 +258,8 @@ select:focus { border-color: var(--turmeric); }
   max-height: 200px;
   overflow-y: auto;
   color: var(--text-main);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 .data-output.empty { color: var(--text-muted); font-style: italic; }
 .progress-container {
@@ -310,6 +312,7 @@ select:focus { border-color: var(--turmeric); }
   pointer-events: none;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 0 10px 30px rgba(230, 57, 37, 0.3);
+  z-index: 1000;
 }
 .toast.visible { opacity: 1; transform: translate(-50%, 0); }
 #hidden-canvas { display: none; }
@@ -413,20 +416,24 @@ const cvsOvr = dom('canvas-overlay');
 const ctxOvr = cvsOvr.getContext('2d');
 const cvsHid = dom('hidden-canvas');
 const ctxHid = cvsHid.getContext('2d');
+
 function setStatus(msg, type) {
   dom('state-text').textContent = msg;
   dom('state-dot').className = `dot ${type}`;
 }
+
 function notify(msg) {
   const t = dom('sys-toast');
   t.textContent = msg;
   t.classList.add('visible');
   setTimeout(() => t.classList.remove('visible'), 3000);
 }
+
 function syncCanvas() {
   cvsOvr.width = vid.videoWidth || vid.clientWidth;
   cvsOvr.height = vid.videoHeight || vid.clientHeight;
 }
+
 async function togglePower() {
   if (S.active) {
     if (S.stream) S.stream.getTracks().forEach(t => t.stop());
@@ -459,6 +466,7 @@ async function togglePower() {
     }
   }
 }
+
 function extractFrame() {
   const w = vid.videoWidth || 640;
   const h = vid.videoHeight || 480;
@@ -474,11 +482,13 @@ function extractFrame() {
   ctxHid.putImageData(data, 0, 0);
   return cvsHid;
 }
+
 function updateProgress(val, msg) {
   dom('p-bar').style.width = `${val}%`;
   dom('pct-val').textContent = `${Math.round(val)}%`;
   dom('p-text').textContent = msg;
 }
+
 async function processFrame(canvas) {
   updateProgress(0, 'Initializing Engine');
   const out = dom('out-ocr');
@@ -496,11 +506,10 @@ async function processFrame(canvas) {
       }
     });
     const raw = res.data.text || '';
-    const conf = res.data.confidence || 0;
-    const clean = raw.replace(/[^\x20-\x7E\n\u00C0-\u024F\u0900-\u097F]/g, '').replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
-    const valid = /[a-zA-Z]{2,}/.test(clean);
-    if (clean.length > 2 && conf > 45 && valid) {
-      updateProgress(100, `Complete (Conf: ${Math.round(conf)}%)`);
+    const clean = raw.trim();
+    
+    if (clean.length > 1) {
+      updateProgress(100, `Complete`);
       out.className = 'data-output';
       out.textContent = clean;
       S.txtSrc = clean;
@@ -517,7 +526,9 @@ async function processFrame(canvas) {
     return null;
   }
 }
+
 const codes = { eng: 'en', fra: 'fr', deu: 'de', spa: 'es', ita: 'it' };
+
 async function synthesizeText(text) {
   const tOut = dom('out-trans');
   tOut.className = 'data-output empty';
@@ -542,6 +553,7 @@ async function synthesizeText(text) {
     tOut.textContent = 'Network synthesis failed.';
   }
 }
+
 function renderHUD(text) {
   syncCanvas();
   const w = cvsOvr.width, h = cvsOvr.height;
@@ -578,7 +590,9 @@ function renderHUD(text) {
   ctxOvr.font = `400 ${fs}px 'Inter', sans-serif`;
   lines.forEach((l, i) => ctxOvr.fillText(l, boxX + 20, boxY + 55 + i * (fs * 1.5)));
 }
+
 dom('btn-power').addEventListener('click', togglePower);
+
 dom('btn-trigger').addEventListener('click', async () => {
   if (!S.active) return;
   const btn = dom('btn-trigger');
@@ -608,6 +622,7 @@ dom('btn-trigger').addEventListener('click', async () => {
     setStatus('Online', 'live');
   }
 });
+
 dom('btn-copy').addEventListener('click', () => {
   if (!S.txtTgt) return;
   navigator.clipboard.writeText(S.txtTgt).then(() => notify('Copied to clipboard')).catch(() => {
@@ -617,18 +632,21 @@ dom('btn-copy').addEventListener('click', () => {
     notify('Copied to clipboard');
   });
 });
+
 dom('btn-share').addEventListener('click', async () => {
   if (!S.txtTgt) return;
   const p = { title: 'Analysis', text: `${S.txtSrc}\n\n${S.txtTgt}` };
   if (navigator.share) { try { await navigator.share(p); } catch (e) {} }
   else { navigator.clipboard.writeText(p.text); notify('Data copied for routing'); }
 });
+
 dom('btn-tog-ovr').addEventListener('click', () => {
   S.showHUD = !S.showHUD;
   if (S.showHUD && S.txtTgt) renderHUD(S.txtTgt);
   else ctxOvr.clearRect(0, 0, cvsOvr.width, cvsOvr.height);
   notify(S.showHUD ? 'HUD Enabled' : 'HUD Disabled');
 });
+
 window.addEventListener('resize', syncCanvas);
 </script>
 </body>
