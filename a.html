@@ -393,7 +393,6 @@ footer{
 
 <div class="shell">
 
-<!-- HEADER -->
 <header>
   <div class="brand">
     <div class="brand-lens">
@@ -414,10 +413,8 @@ footer{
   </div>
 </header>
 
-<!-- MAIN -->
 <div class="main">
 
-  <!-- MODULE 1 — CAMERA (Student 1) -->
   <div class="card cl" style="display:flex;flex-direction:column">
     <div class="card-head">
       <div class="mbadge">
@@ -481,10 +478,8 @@ footer{
     </div>
   </div>
 
-  <!-- RIGHT COL -->
   <div class="right-col">
 
-    <!-- MODULE 2 — OCR (Student 2) -->
     <div class="card cb">
       <div class="card-head">
         <div class="mbadge">
@@ -507,7 +502,6 @@ footer{
       </div>
     </div>
 
-    <!-- MODULE 3 — TRANSLATION (Student 3) -->
     <div class="card cr">
       <div class="card-head">
         <div class="mbadge">
@@ -527,7 +521,6 @@ footer{
       </div>
     </div>
 
-    <!-- HISTORY -->
     <div class="card cl">
       <div class="card-head">
         <div class="mbadge">
@@ -539,17 +532,12 @@ footer{
       <div class="hist-body" id="hist"></div>
     </div>
 
-  </div><!-- /right-col -->
-</div><!-- /main -->
-
-<!-- TIPS -->
-<div class="tips">
+  </div></div><div class="tips">
   <div class="tip"><div class="ti">💡</div><div><div class="tt">Best Results</div><div class="tb">Hold camera steady, use good light, keep text flat and fully in frame.</div></div></div>
-  <div class="tip"><div class="ti">🌐</div><div><div class="tt">Translation</div><div class="tb">Uses LibreTranslate (free, open-source). Requires internet connection.</div></div></div>
+  <div class="tip"><div class="ti">🌐</div><div><div class="tt">Translation</div><div class="tb">Uses MyMemory API (free, reliable). Requires internet connection.</div></div></div>
   <div class="tip"><div class="ti">📋</div><div><div class="tt">History</div><div class="tb">Last 5 translations saved locally. Tap any entry to reload it instantly.</div></div></div>
 </div>
 
-<!-- FOOTER -->
 <footer>
   <div class="fmods">
     <div class="fm"><div class="fmd" style="background:var(--lime)"></div>S1 · Camera UI</div>
@@ -558,13 +546,8 @@ footer{
   </div>
   <div>LinguaLens v2.0 · WT Project 2024–25</div>
 </footer>
-</div><!-- /shell -->
+</div><div class="toast" id="toast"></div>
 
-<div class="toast" id="toast"></div>
-
-<!-- ═══════════════════════════════════════
-     JAVASCRIPT — ALL 3 MODULES
-═══════════════════════════════════════ -->
 <script>
 'use strict';
 
@@ -794,31 +777,32 @@ function finishCap(){
 
 /* ══════════════════════════════════════════
    MODULE 3 — TRANSLATION & OVERLAY (Student 3)
-   LibreTranslate API + Canvas overlay + localStorage
+   MyMemory API + Canvas overlay + localStorage
 ══════════════════════════════════════════ */
-const LIBRE = [
-  'https://libretranslate.com/translate',
-  'https://translate.argosopentech.com/translate',
-  'https://libretranslate.de/translate',
-];
 const T2I = {eng:'en',fra:'fr',deu:'de',spa:'es',ita:'it',por:'pt',hin:'hi'};
 
 async function doTranslate(text, src, tgt){
-  const body = JSON.stringify({q:text, source:T2I[src]||'en', target:tgt, format:'text'});
-  for(const url of LIBRE){
-    try{
-      const r = await fetch(url,{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body,
-        signal:AbortSignal.timeout(9000)
-      });
-      if(!r.ok) continue;
-      const d = await r.json();
-      if(d.translatedText) return d.translatedText;
-    }catch(_){}
+  // Convert Tesseract 3-letter codes to standard 2-letter codes
+  const sourceLang = T2I[src] || 'en';
+  
+  // Use MyMemory API (Free, supports CORS, no API key required)
+  const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${sourceLang}|${tgt}`;
+
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(9000) });
+    if (!response.ok) throw new Error('Network error');
+    
+    const data = await response.json();
+    
+    // Check if the API returned a valid translation
+    if (data.responseStatus === 200 && data.responseData && data.responseData.translatedText) {
+      return data.responseData.translatedText;
+    } else {
+      throw new Error(data.responseDetails || 'Translation failed.');
+    }
+  } catch (e) {
+    throw new Error('Translation server unreachable. Check internet connection.');
   }
-  throw new Error('All translation servers unreachable. Check internet connection.');
 }
 
 async function runTranslation(text){
