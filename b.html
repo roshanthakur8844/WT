@@ -1,942 +1,635 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>LinguaLens — AR Text Translator</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>LinguaLens AR</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
 :root {
-  --bg:        #060a10;
-  --bg2:       #0a1018;
-  --surface:   #0f1824;
-  --surface2:  #151f2e;
-  --border:    #1c2e42;
-  --border2:   #243547;
-  --lime:      #c8f135;
-  --lime-dim:  #9abf1f;
-  --lime-glow: rgba(200,241,53,.18);
-  --blue:      #38bdf8;
-  --red:       #fb4f67;
-  --amber:     #f5a623;
-  --text:      #d0e4f7;
-  --text-2:    #6a8aaa;
-  --text-3:    #3a5470;
-  --font-disp: 'Bebas Neue', sans-serif;
-  --font-body: 'Outfit', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --r: 8px;
-  --r2: 14px;
+  --app-bg: #140806;
+  --panel-bg: #1e0c09;
+  --border-dim: #3a1611;
+  --vermilion: #e63925;
+  --vermilion-glow: rgba(230, 57, 37, 0.25);
+  --turmeric: #f9ba15;
+  --turmeric-glow: rgba(249, 186, 21, 0.2);
+  --text-main: #fdf2f0;
+  --text-muted: #d0a49d;
+  --font-sans: 'Inter', sans-serif;
+  --font-disp: 'Syne', sans-serif;
+  --rad: 12px;
 }
-
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{font-size:16px;-webkit-tap-highlight-color:transparent}
-body{
-  background:var(--bg);
-  color:var(--text);
-  font-family:var(--font-body);
-  min-height:100dvh;
-  overflow-x:hidden;
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: var(--app-bg);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: radial-gradient(circle at 50% 0%, var(--vermilion-glow) 0%, transparent 50%);
 }
-
-body::before{
-  content:'';position:fixed;inset:0;z-index:0;
-  background-image:
-    radial-gradient(ellipse 70% 50% at 50% -10%, rgba(200,241,53,.07) 0%, transparent 60%),
-    repeating-linear-gradient(60deg,  transparent,transparent 30px,rgba(200,241,53,.018) 30px,rgba(200,241,53,.018) 31px),
-    repeating-linear-gradient(120deg, transparent,transparent 30px,rgba(200,241,53,.018) 30px,rgba(200,241,53,.018) 31px),
-    repeating-linear-gradient(0deg,   transparent,transparent 30px,rgba(200,241,53,.018) 30px,rgba(200,241,53,.018) 31px);
-  pointer-events:none;
+.wrapper {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
-
-.shell{
-  position:relative;z-index:1;
-  max-width:1120px;margin:0 auto;
-  padding:0 16px 60px;
-  display:flex;flex-direction:column;
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-dim);
+  padding-bottom: 1.5rem;
+  animation: fade-in 0.8s ease-out;
 }
-
-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:20px 0 18px;
-  border-bottom:1px solid var(--border);
-  animation:slideDown .5s ease both;
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
-.brand{display:flex;align-items:center;gap:14px}
-.brand-lens{
-  width:46px;height:46px;border-radius:50%;
-  border:1.5px solid var(--lime);
-  display:flex;align-items:center;justify-content:center;
-  position:relative;
-  box-shadow:0 0 20px var(--lime-glow),inset 0 0 12px rgba(200,241,53,.06);
+.logo-mark {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, var(--vermilion), var(--turmeric));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+  box-shadow: 0 0 20px var(--vermilion-glow);
 }
-.brand-lens::after{
-  content:'';position:absolute;width:28px;height:28px;border-radius:50%;
-  border:1px dashed rgba(200,241,53,.3);
-  animation:spin 12s linear infinite;
+.logo-mark svg {
+  transform: rotate(-45deg);
+  width: 20px;
+  height: 20px;
+  color: #fff;
 }
-.brand-lens svg{width:18px;height:18px;color:var(--lime)}
-.brand-name{
-  font-family:var(--font-disp);font-size:2.1rem;
-  letter-spacing:.04em;line-height:1;color:#fff;
+.logo-text {
+  font-family: var(--font-disp);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
-.brand-name em{color:var(--lime);font-style:normal}
-.brand-sub{
-  font-family:var(--font-mono);font-size:.58rem;
-  letter-spacing:.18em;text-transform:uppercase;color:var(--text-2);margin-top:3px;
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--panel-bg);
+  padding: 0.5rem 1rem;
+  border-radius: 99px;
+  border: 1px solid var(--border-dim);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
-.status-pill{
-  display:flex;align-items:center;gap:7px;
-  background:var(--surface);border:1px solid var(--border);
-  padding:6px 14px;border-radius:99px;
-  font-family:var(--font-mono);font-size:.65rem;letter-spacing:.1em;color:var(--text-2);
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all 0.3s ease;
 }
-.sdot{
-  width:7px;height:7px;border-radius:50%;
-  background:var(--text-3);transition:background .3s,box-shadow .3s;
+.dot.live { background: var(--turmeric); box-shadow: 0 0 10px var(--turmeric); }
+.dot.busy { background: var(--vermilion); animation: pulse 1s infinite alternate; }
+.core-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 1.5rem;
+  animation: slide-up 0.8s ease-out;
 }
-.sdot.live{background:var(--lime);box-shadow:0 0 8px var(--lime)}
-.sdot.busy{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:blink .6s ease-in-out infinite}
-.sdot.err {background:var(--red); box-shadow:0 0 8px var(--red)}
-
-.mbadge{
-  display:inline-flex;align-items:center;gap:8px;
-  font-family:var(--font-mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);
+@media (max-width: 900px) {
+  .core-grid { grid-template-columns: 1fr; }
 }
-.mbadge .dot{width:5px;height:5px;border-radius:50%}
-.mbadge .who{color:var(--text-3);font-size:.55rem}
-
-.card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r2);overflow:hidden;position:relative;
+.panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--rad);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
-.card::before{
-  content:'';position:absolute;top:0;left:10%;right:10%;height:1px;
-  background:linear-gradient(90deg,transparent,currentColor,transparent);opacity:.45;
+.panel-hdr {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-dim);
+  font-family: var(--font-disp);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--turmeric);
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
 }
-.card.cl::before{color:var(--lime)}
-.card.cb::before{color:var(--blue)}
-.card.cr::before{color:var(--red)}
-.card-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 18px;border-bottom:1px solid var(--border);
-  background:rgba(0,0,0,.2);
+.cam-container {
+  position: relative;
+  background: #000;
+  aspect-ratio: 4/3;
+  width: 100%;
 }
-
-.main{
-  display:grid;grid-template-columns:1fr 380px;gap:18px;
-  margin-top:20px;animation:fadeUp .6s .1s ease both;
+#vid-feed {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
-@media(max-width:780px){.main{grid-template-columns:1fr}}
-
-.cam-wrap{
-  position:relative;background:#000;
-  aspect-ratio:4/3;overflow:hidden;
+#canvas-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
-#video{width:100%;height:100%;object-fit:cover;display:block}
-#ovr-cvs{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-
-.hud-c{position:absolute;width:20px;height:20px;opacity:.85}
-.hud-c.tl{top:12px;left:12px;border-top:2px solid var(--lime);border-left:2px solid var(--lime)}
-.hud-c.tr{top:12px;right:12px;border-top:2px solid var(--lime);border-right:2px solid var(--lime)}
-.hud-c.bl{bottom:12px;left:12px;border-bottom:2px solid var(--lime);border-left:2px solid var(--lime)}
-.hud-c.br{bottom:12px;right:12px;border-bottom:2px solid var(--lime);border-right:2px solid var(--lime)}
-
-.scan-beam{
-  position:absolute;left:0;right:0;height:2px;top:0;
-  background:linear-gradient(90deg,transparent,var(--lime),transparent);
-  box-shadow:0 0 10px var(--lime),0 0 28px var(--lime-glow);
-  opacity:0;
+.reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  pointer-events: none;
+  opacity: 0.3;
 }
-.scan-beam.on{animation:scanBeam 2.5s ease-in-out infinite}
-
-.xhair{
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-  width:40px;height:40px;opacity:.2;pointer-events:none;
+.reticle::before, .reticle::after {
+  content: '';
+  position: absolute;
+  background: var(--turmeric);
 }
-.xhair::before,.xhair::after{content:'';position:absolute;background:var(--lime)}
-.xhair::before{width:1px;height:100%;left:50%}
-.xhair::after{height:1px;width:100%;top:50%}
-
-.cam-idle{
-  position:absolute;inset:0;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-  background:var(--bg2);transition:opacity .4s;
+.reticle::before { width: 2px; height: 100%; left: 29px; }
+.reticle::after { height: 2px; width: 100%; top: 29px; }
+.corner { position: absolute; width: 30px; height: 30px; border: 2px solid var(--vermilion); opacity: 0.6; }
+.corner.tl { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+.corner.tr { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+.corner.bl { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+.corner.br { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+.cam-shroud {
+  position: absolute;
+  inset: 0;
+  background: var(--app-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s;
 }
-.cam-idle.gone{opacity:0;pointer-events:none}
-.idle-ring{
-  width:70px;height:70px;border-radius:50%;
-  border:1.5px solid var(--border2);
-  display:flex;align-items:center;justify-content:center;position:relative;
+.cam-shroud.hidden { opacity: 0; pointer-events: none; }
+.controls {
+  padding: 1.25rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
-.idle-ring::before{
-  content:'';position:absolute;inset:-8px;border-radius:50%;
-  border:1px dashed var(--border2);animation:spin 8s linear infinite;
+.select-group {
+  display: flex;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 240px;
 }
-.idle-ring svg{width:28px;height:28px;color:var(--text-3)}
-.idle-msg{
-  font-family:var(--font-mono);font-size:.68rem;
-  color:var(--text-3);letter-spacing:.1em;text-align:center;line-height:1.8;
+select {
+  flex: 1;
+  background: var(--app-bg);
+  border: 1px solid var(--border-dim);
+  color: var(--text-main);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
 }
-.err-bar{
-  display:none;align-items:center;gap:10px;
-  background:rgba(251,79,103,.07);border-top:1px solid rgba(251,79,103,.2);
-  padding:10px 18px;font-family:var(--font-mono);font-size:.68rem;color:var(--red);
+select:focus { border-color: var(--turmeric); }
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-family: var(--font-disp);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
-.err-bar.show{display:flex}
-
-.flash{
-  position:absolute;inset:0;
-  background:rgba(200,241,53,.22);opacity:0;pointer-events:none;
-  transition:opacity .12s;
+.btn-primary {
+  background: var(--vermilion);
+  color: #fff;
 }
-.flash.on{opacity:1}
-
-.qtip{
-  position:absolute;top:12px;left:50%;transform:translateX(-50%);
-  background:rgba(6,10,16,.82);border:1px solid var(--border2);
-  font-family:var(--font-mono);font-size:.55rem;letter-spacing:.07em;
-  color:var(--text-2);padding:5px 14px;border-radius:99px;
-  opacity:0;transition:opacity .3s;white-space:nowrap;pointer-events:none;
+.btn-primary:hover:not(:disabled) {
+  background: #ff4b38;
+  box-shadow: 0 0 15px var(--vermilion-glow);
 }
-.qtip.show{opacity:1}
-
-.ctrl{
-  padding:14px 18px;
-  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-  border-top:1px solid var(--border);background:rgba(0,0,0,.15);
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sec {
+  background: transparent;
+  border: 1px solid var(--turmeric);
+  color: var(--turmeric);
 }
-.lang-row{display:flex;align-items:center;gap:8px;flex:1;min-width:200px}
-select{
-  flex:1;background:var(--bg2);border:1px solid var(--border2);
-  color:var(--text);font-family:var(--font-mono);font-size:.68rem;
-  padding:9px 10px;border-radius:var(--r);cursor:pointer;outline:none;
-  appearance:none;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236a8aaa'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;
-  transition:border-color .2s;
+.btn-sec:hover {
+  background: var(--turmeric-glow);
 }
-select:focus{border-color:var(--lime)}
-
-.btn-icon{
-  background:var(--surface2);border:1px solid var(--border2);
-  color:var(--text-2);padding:9px 12px;border-radius:var(--r);
-  cursor:pointer;font-size:.9rem;transition:all .2s;
+.side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
-.btn-icon:hover{border-color:var(--lime);color:var(--lime)}
-
-.btn{
-  font-family:var(--font-mono);font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;
-  padding:9px 16px;border-radius:var(--r);border:1px solid;
-  cursor:pointer;transition:all .2s;white-space:nowrap;
+.data-box {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
-.btn-cam{background:var(--surface2);color:var(--blue);border-color:rgba(56,189,248,.25)}
-.btn-cam:hover{border-color:var(--blue);box-shadow:0 0 14px rgba(56,189,248,.2)}
-.btn-cam.active{color:var(--red);border-color:rgba(251,79,103,.3)}
-.btn-cam.active:hover{border-color:var(--red)}
-.btn-cap{
-  background:var(--lime);color:#050a05;border-color:var(--lime);font-weight:600;
-  box-shadow:0 0 16px var(--lime-glow);
+.data-output {
+  background: var(--app-bg);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  min-height: 100px;
+  max-height: 200px;
+  overflow-y: auto;
+  color: var(--text-main);
 }
-.btn-cap:hover:not(:disabled){background:#d8ff50;box-shadow:0 0 26px rgba(200,241,53,.4)}
-.btn-cap:disabled{opacity:.35;cursor:not-allowed;box-shadow:none}
-
-.right-col{display:flex;flex-direction:column;gap:16px}
-.ocr-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
-.prog-head{
-  display:flex;justify-content:space-between;
-  font-family:var(--font-mono);font-size:.6rem;letter-spacing:.1em;color:var(--text-2);
+.data-output.empty { color: var(--text-muted); font-style: italic; }
+.progress-container {
+  height: 4px;
+  background: var(--app-bg);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.5rem;
 }
-.ppct{color:var(--lime);font-weight:500}
-.prog-track{height:3px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:8px}
-.prog-fill{
-  height:100%;width:0%;border-radius:99px;
-  background:linear-gradient(90deg,var(--lime-dim),var(--lime));
-  box-shadow:0 0 8px rgba(200,241,53,.5);transition:width .25s ease;
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--turmeric);
+  transition: width 0.3s;
 }
-.prog-msg{
-  font-family:var(--font-mono);font-size:.6rem;
-  color:var(--text-3);letter-spacing:.05em;min-height:14px;margin-top:7px;
+.progress-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
 }
-.sec-label{
-  display:flex;align-items:center;gap:8px;
-  font-family:var(--font-mono);font-size:.57rem;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--text-3);
+.actions {
+  display: flex;
+  gap: 0.5rem;
 }
-.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
-.tbox{
-  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
-  padding:12px 14px;font-family:var(--font-mono);font-size:.75rem;
-  line-height:1.65;color:var(--text);min-height:80px;
-  white-space:pre-wrap;word-break:break-word;
-  transition:border-color .3s;max-height:160px;overflow-y:auto;
+.btn-sm {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.7rem;
+  background: var(--app-bg);
+  border: 1px solid var(--border-dim);
+  color: var(--text-main);
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 1;
 }
-.tbox.on{border-color:rgba(200,241,53,.25)}
-.tbox::-webkit-scrollbar{width:4px}
-.tbox::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
-.ph{color:var(--text-3);font-style:italic}
-
-.trans-body{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
-.trbox{
-  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
-  padding:12px 14px;font-family:var(--font-body);font-size:.88rem;
-  line-height:1.7;color:#fff;min-height:80px;
-  white-space:pre-wrap;word-break:break-word;
-  max-height:160px;overflow-y:auto;transition:border-color .3s;
+.btn-sm:hover:not(:disabled) { border-color: var(--vermilion); color: var(--vermilion); }
+.btn-sm:disabled { opacity: 0.3; }
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translate(-50%, 20px);
+  background: var(--vermilion);
+  color: #fff;
+  padding: 0.75rem 2rem;
+  border-radius: 99px;
+  font-family: var(--font-disp);
+  font-weight: 600;
+  font-size: 0.85rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(230, 57, 37, 0.3);
 }
-.trbox.on{border-color:rgba(56,189,248,.25)}
-.trbox::-webkit-scrollbar{width:4px}
-.trbox::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
-.tling{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:.7rem;color:var(--blue)}
-.dots span{
-  display:inline-block;width:4px;height:4px;border-radius:50%;
-  background:var(--blue);margin:0 2px;
-  animation:dotB .8s ease-in-out infinite;
-}
-.dots span:nth-child(2){animation-delay:.15s}
-.dots span:nth-child(3){animation-delay:.3s}
-.act-row{display:flex;gap:8px;flex-wrap:wrap}
-.bsm{
-  flex:1;min-width:70px;
-  font-family:var(--font-mono);font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;
-  padding:8px 10px;border-radius:var(--r);border:1px solid var(--border2);
-  background:var(--surface2);color:var(--text-2);
-  cursor:pointer;transition:all .2s;
-  display:flex;align-items:center;justify-content:center;gap:5px;
-}
-.bsm:hover{border-color:var(--lime);color:var(--lime)}
-.bsm:disabled{opacity:.3;cursor:not-allowed}
-
-.hist-body{padding:12px 16px;max-height:220px;overflow-y:auto}
-.hist-body::-webkit-scrollbar{width:4px}
-.hist-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
-.he{font-family:var(--font-mono);font-size:.65rem;color:var(--text-3);text-align:center;padding:18px 0}
-.hi{
-  display:flex;align-items:flex-start;gap:10px;
-  padding:10px 12px;border-radius:var(--r);
-  border:1px solid var(--border);background:var(--bg2);
-  margin-bottom:8px;cursor:pointer;transition:all .2s;
-}
-.hi:last-child{margin-bottom:0}
-.hi:hover{border-color:rgba(200,241,53,.3);background:rgba(200,241,53,.03)}
-.hl{font-family:var(--font-mono);font-size:.58rem;color:var(--lime);white-space:nowrap;padding-top:2px;min-width:60px}
-.ht{flex:1;min-width:0}
-.ho{font-size:.72rem;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.htr{font-size:.72rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-
-.tips{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;
-  margin-top:18px;animation:fadeUp .7s .25s ease both;
-}
-@media(max-width:600px){.tips{grid-template-columns:1fr}}
-.tip{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:var(--r);padding:14px 16px;
-  display:flex;align-items:flex-start;gap:12px;
-}
-.ti{font-size:1.3rem;flex-shrink:0;margin-top:1px}
-.tt{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--lime);margin-bottom:4px}
-.tb{font-size:.75rem;color:var(--text-2);line-height:1.5}
-
-footer{
-  margin-top:28px;padding-top:16px;border-top:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
-  font-family:var(--font-mono);font-size:.6rem;color:var(--text-3);
-  animation:fadeUp .8s .3s ease both;
-}
-.fmods{display:flex;gap:16px;flex-wrap:wrap}
-.fm{display:flex;align-items:center;gap:6px}
-.fmd{width:6px;height:6px;border-radius:50%}
-
-.toast{
-  position:fixed;bottom:24px;left:50%;
-  transform:translateX(-50%) translateY(50px);
-  background:var(--surface);border:1px solid var(--lime);color:var(--lime);
-  font-family:var(--font-mono);font-size:.7rem;letter-spacing:.06em;
-  padding:10px 24px;border-radius:99px;
-  box-shadow:0 0 20px var(--lime-glow);
-  opacity:0;transition:all .3s;z-index:999;white-space:nowrap;
-}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-#cap-cvs{display:none}
-
-@keyframes slideDown{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
-@keyframes fadeUp   {from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:none}}
-@keyframes spin     {to{transform:rotate(360deg)}}
-@keyframes blink    {0%,100%{opacity:1}50%{opacity:.3}}
-@keyframes scanBeam {0%{top:0%;opacity:0}5%{opacity:1}95%{opacity:1}100%{top:100%;opacity:0}}
-@keyframes dotB     {0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.toast.visible { opacity: 1; transform: translate(-50%, 0); }
+#hidden-canvas { display: none; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.4; } }
 </style>
 </head>
 <body>
-<canvas id="cap-cvs"></canvas>
-
-<div class="shell">
-
-<header>
-  <div class="brand">
-    <div class="brand-lens">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-        <circle cx="11" cy="11" r="8"/>
-        <path d="M21 21l-4.35-4.35"/>
-        <circle cx="11" cy="11" r="4"/>
-      </svg>
-    </div>
-    <div>
-      <div class="brand-name">Lingua<em>Lens</em></div>
-      <div class="brand-sub">AR Real-Time Text Translator · WT Project</div>
-    </div>
-  </div>
-  <div class="status-pill">
-    <div class="sdot" id="sdot"></div>
-    <span id="slbl">STANDBY</span>
-  </div>
-</header>
-
-<div class="main">
-
-  <div class="card cl" style="display:flex;flex-direction:column">
-    <div class="card-head">
-      <div class="mbadge">
-        <div class="dot" style="background:var(--lime);box-shadow:0 0 6px var(--lime)"></div>
-        Module 01 — Camera Interface
-        <span class="who">/ Student 1</span>
+<canvas id="hidden-canvas"></canvas>
+<div class="wrapper">
+  <header class="top-bar">
+    <div class="logo-area">
+      <div class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+        </svg>
       </div>
+      <div class="logo-text">LinguaLens</div>
     </div>
-
-    <div class="cam-wrap" id="cam-wrap">
-      <video id="video" autoplay muted playsinline></video>
-      <canvas id="ovr-cvs"></canvas>
-      <div class="flash" id="flash"></div>
-      <div class="scan-beam" id="sbeam"></div>
-      <div class="hud-c tl"></div><div class="hud-c tr"></div>
-      <div class="hud-c bl"></div><div class="hud-c br"></div>
-      <div class="xhair"></div>
-      <div class="qtip" id="qtip">💡 Hold steady · Good light · Point at clear text</div>
-      <div class="cam-idle" id="cam-idle">
-        <div class="idle-ring">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
-          </svg>
-        </div>
-        <div class="idle-msg">CAMERA OFFLINE<br/>Press START below</div>
-      </div>
+    <div class="status-indicator">
+      <div class="dot" id="state-dot"></div>
+      <span id="state-text">Offline</span>
     </div>
-
-    <div class="err-bar" id="err-bar">
-      <span>⚠</span><span id="err-msg">Camera unavailable.</span>
-    </div>
-
-    <div class="ctrl">
-      <div class="lang-row">
-        <select id="src-lang">
-          <option value="eng">English (OCR)</option>
-          <option value="fra">French (OCR)</option>
-          <option value="deu">German (OCR)</option>
-          <option value="spa">Spanish (OCR)</option>
-          <option value="ita">Italian (OCR)</option>
-          <option value="por">Portuguese (OCR)</option>
-        </select>
-        <button class="btn-icon" id="swap-btn" title="Swap">⇄</button>
-        <select id="tgt-lang">
-          <option value="en">→ English</option>
-          <option value="fr">→ French</option>
-          <option value="de">→ German</option>
-          <option value="es">→ Spanish</option>
-          <option value="it">→ Italian</option>
-          <option value="pt">→ Portuguese</option>
-          <option value="hi">→ Hindi</option>
-          <option value="ja">→ Japanese</option>
-          <option value="zh">→ Chinese</option>
-          <option value="ar">→ Arabic</option>
-          <option value="ru">→ Russian</option>
-        </select>
-      </div>
-      <button class="btn btn-cam" id="cam-btn">▶ START</button>
-      <button class="btn btn-cap" id="cap-btn" disabled>⊙ CAPTURE</button>
-    </div>
-  </div>
-
-  <div class="right-col">
-
-    <div class="card cb">
-      <div class="card-head">
-        <div class="mbadge">
-          <div class="dot" style="background:var(--blue);box-shadow:0 0 6px var(--blue)"></div>
-          Module 02 — OCR Engine
-          <span class="who">/ Student 2</span>
+  </header>
+  <main class="core-grid">
+    <section class="panel">
+      <div class="panel-hdr">Optics & Capture</div>
+      <div class="cam-container">
+        <video id="vid-feed" autoplay muted playsinline></video>
+        <canvas id="canvas-overlay"></canvas>
+        <div class="reticle"></div>
+        <div class="corner tl"></div><div class="corner tr"></div>
+        <div class="corner bl"></div><div class="corner br"></div>
+        <div class="cam-shroud" id="cam-shroud">
+          <span style="color:var(--text-muted); font-size:0.85rem; letter-spacing:0.05em;">SYSTEM STANDBY</span>
         </div>
       </div>
-      <div class="ocr-body">
-        <div>
-          <div class="prog-head">
-            <span>TEXT RECOGNITION</span>
-            <span class="ppct" id="ppct">0%</span>
+      <div class="controls">
+        <div class="select-group">
+          <select id="lang-in">
+            <option value="eng">English (Detect)</option>
+            <option value="fra">French (Detect)</option>
+            <option value="deu">German (Detect)</option>
+            <option value="spa">Spanish (Detect)</option>
+            <option value="ita">Italian (Detect)</option>
+          </select>
+          <select id="lang-out">
+            <option value="hi">To Hindi</option>
+            <option value="en">To English</option>
+            <option value="fr">To French</option>
+            <option value="es">To Spanish</option>
+            <option value="ja">To Japanese</option>
+          </select>
+        </div>
+        <button class="btn btn-sec" id="btn-power">Initialize</button>
+        <button class="btn btn-primary" id="btn-trigger" disabled>Capture</button>
+      </div>
+    </section>
+    <aside class="side-stack">
+      <section class="panel">
+        <div class="panel-hdr">
+          <span>Analysis</span>
+          <span id="pct-val" style="color:var(--text-main)">0%</span>
+        </div>
+        <div class="data-box">
+          <div>
+            <div class="progress-container"><div class="progress-bar" id="p-bar"></div></div>
+            <div class="progress-text" id="p-text">Awaiting input...</div>
           </div>
-          <div class="prog-track"><div class="prog-fill" id="pfill"></div></div>
-          <div class="prog-msg" id="pmsg">Waiting for capture…</div>
+          <div class="data-output empty" id="out-ocr">Raw data will appear here.</div>
         </div>
-        <div class="sec-label">Detected Text</div>
-        <div class="tbox" id="ocr-out"><span class="ph">No text detected yet.</span></div>
-      </div>
-    </div>
-
-    <div class="card cr">
-      <div class="card-head">
-        <div class="mbadge">
-          <div class="dot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></div>
-          Module 03 — Translation &amp; Overlay
-          <span class="who">/ Student 3</span>
+      </section>
+      <section class="panel">
+        <div class="panel-hdr">Synthesis</div>
+        <div class="data-box">
+          <div class="data-output empty" id="out-trans">Translated stream will appear here.</div>
+          <div class="actions">
+            <button class="btn-sm" id="btn-copy" disabled>Copy</button>
+            <button class="btn-sm" id="btn-share" disabled>Share</button>
+            <button class="btn-sm" id="btn-tog-ovr" disabled>Toggle HUD</button>
+          </div>
         </div>
-      </div>
-      <div class="trans-body">
-        <div class="sec-label">Translation Output</div>
-        <div class="trbox" id="tr-out"><span class="ph">Translation will appear here.</span></div>
-        <div class="act-row">
-          <button class="bsm" id="copy-btn" disabled>⎘ Copy</button>
-          <button class="bsm" id="share-btn" disabled>↗ Share</button>
-          <button class="bsm" id="ovr-btn"   disabled>⊞ Overlay</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card cl">
-      <div class="card-head">
-        <div class="mbadge">
-          <div class="dot" style="background:var(--lime);box-shadow:0 0 4px var(--lime)"></div>
-          History Log
-        </div>
-        <button class="bsm" id="clr-btn" style="flex:0;padding:4px 12px;min-width:auto">CLEAR</button>
-      </div>
-      <div class="hist-body" id="hist"></div>
-    </div>
-
-  </div>
+      </section>
+    </aside>
+  </main>
 </div>
-
-<div class="tips">
-  <div class="tip"><div class="ti">💡</div><div><div class="tt">Best Results</div><div class="tb">Hold camera steady, use good light, keep text flat and fully in frame.</div></div></div>
-  <div class="tip"><div class="ti">🌐</div><div><div class="tt">Translation</div><div class="tb">Uses Google Translate API. Frame freezes during translation for perfect alignment.</div></div></div>
-  <div class="tip"><div class="ti">📋</div><div><div class="tt">History</div><div class="tb">Last 5 translations saved locally. Tap any entry to reload it instantly.</div></div></div>
-</div>
-
-<footer>
-  <div class="fmods">
-    <div class="fm"><div class="fmd" style="background:var(--lime)"></div>S1 · Camera UI</div>
-    <div class="fm"><div class="fmd" style="background:var(--blue)"></div>S2 · OCR Engine</div>
-    <div class="fm"><div class="fmd" style="background:var(--red)"></div>S3 · Translate &amp; Overlay</div>
-  </div>
-  <div>LinguaLens v2.0 · WT Project 2024–25</div>
-</footer>
-</div>
-
-<div class="toast" id="toast"></div>
-
+<div class="toast" id="sys-toast"></div>
 <script>
-'use strict';
-
 const S = {
-  camOn:    false,
-  busy:     false,
-  ocrText:  '',
-  tranText: '',
-  src:      'eng',
-  tgt:      'en',
-  ovrOn:    true,
-  history:  JSON.parse(localStorage.getItem('ll_h') || '[]'),
+  active: false,
+  processing: false,
+  stream: null,
+  txtSrc: '',
+  txtTgt: '',
+  showHUD: true
 };
-
-const $  = id => document.getElementById(id);
-const video  = $('video');
-const ovrCvs = $('ovr-cvs');
-const ovrCtx = ovrCvs.getContext('2d');
-const capCvs = $('cap-cvs');
-const capCtx = capCvs.getContext('2d');
-
-function setSt(lbl, mode='idle'){
-  $('slbl').textContent = lbl;
-  $('sdot').className   = 'sdot ' + mode;
+const dom = id => document.getElementById(id);
+const vid = dom('vid-feed');
+const cvsOvr = dom('canvas-overlay');
+const ctxOvr = cvsOvr.getContext('2d');
+const cvsHid = dom('hidden-canvas');
+const ctxHid = cvsHid.getContext('2d');
+function setStatus(msg, type) {
+  dom('state-text').textContent = msg;
+  dom('state-dot').className = `dot ${type}`;
 }
-
-let stream = null;
-
-async function startCam(){
-  try{
-    $('err-bar').classList.remove('show');
-    stream = await navigator.mediaDevices.getUserMedia({
-      video:{facingMode:{ideal:'environment'}, width:{ideal:1920}, height:{ideal:1080}},
-      audio:false
-    });
-    video.srcObject = stream;
-    await video.play();
-
-    $('cam-idle').classList.add('gone');
-    $('cam-btn').textContent = '■ STOP';
-    $('cam-btn').classList.add('active');
-    $('cap-btn').disabled = false;
-    $('cap-btn').textContent = '⊙ CAPTURE';
-    $('sbeam').classList.add('on');
-    S.camOn = true;
-    setSt('LIVE','live');
-
-    const q = $('qtip');
-    q.classList.add('show');
-    setTimeout(()=>q.classList.remove('show'), 3500);
-
-    video.addEventListener('loadedmetadata', syncOvr, {once:true});
-    syncOvr();
-
-  }catch(e){
-    const m = e.name==='NotAllowedError'
-      ? 'Permission denied — allow camera in browser settings.'
-      : e.name==='NotFoundError'
-      ? 'No camera found on this device.'
-      : 'Camera error: '+e.message;
-    $('err-msg').textContent = m;
-    $('err-bar').classList.add('show');
-    setSt('ERROR','err');
+function notify(msg) {
+  const t = dom('sys-toast');
+  t.textContent = msg;
+  t.classList.add('visible');
+  setTimeout(() => t.classList.remove('visible'), 3000);
+}
+function syncCanvas() {
+  cvsOvr.width = vid.videoWidth || vid.clientWidth;
+  cvsOvr.height = vid.videoHeight || vid.clientHeight;
+}
+async function togglePower() {
+  if (S.active) {
+    if (S.stream) S.stream.getTracks().forEach(t => t.stop());
+    vid.srcObject = null;
+    S.stream = null;
+    S.active = false;
+    dom('cam-shroud').classList.remove('hidden');
+    dom('btn-power').textContent = 'Initialize';
+    dom('btn-trigger').disabled = true;
+    ctxOvr.clearRect(0, 0, cvsOvr.width, cvsOvr.height);
+    setStatus('Offline', '');
+  } else {
+    try {
+      S.stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false
+      });
+      vid.srcObject = S.stream;
+      await vid.play();
+      dom('cam-shroud').classList.add('hidden');
+      dom('btn-power').textContent = 'Terminate';
+      dom('btn-trigger').disabled = false;
+      S.active = true;
+      vid.addEventListener('loadedmetadata', syncCanvas, { once: true });
+      syncCanvas();
+      setStatus('Online', 'live');
+    } catch (e) {
+      notify('Optical sensor access denied');
+      setStatus('Error', 'busy');
+    }
   }
 }
-
-function stopCam(){
-  if(stream) stream.getTracks().forEach(t=>t.stop());
-  video.srcObject = null; stream = null;
-  $('cam-idle').classList.remove('gone');
-  $('cam-btn').textContent = '▶ START';
-  $('cam-btn').classList.remove('active');
-  $('cap-btn').disabled = true;
-  $('cap-btn').textContent = '⊙ CAPTURE';
-  $('sbeam').classList.remove('on');
-  ovrCtx.clearRect(0,0,ovrCvs.width,ovrCvs.height);
-  S.camOn = false;
-  setSt('STANDBY','idle');
-}
-
-function syncOvr(){
-  ovrCvs.width  = video.videoWidth  || video.clientWidth;
-  ovrCvs.height = video.videoHeight || video.clientHeight;
-}
-
-$('cam-btn').addEventListener('click', ()=> S.camOn ? stopCam() : startCam());
-$('src-lang').addEventListener('change', e => S.src = e.target.value);
-$('tgt-lang').addEventListener('change', e => S.tgt = e.target.value);
-
-$('swap-btn').addEventListener('click', ()=>{
-  const t2s={en:'eng',fr:'fra',de:'deu',es:'spa',it:'ita',pt:'por'};
-  const s2t={eng:'en',fra:'fr',deu:'de',spa:'es',ita:'it',por:'pt'};
-  const ns=t2s[$('tgt-lang').value], nt=s2t[S.src];
-  if(ns && nt){
-    $('src-lang').value=ns; S.src=ns;
-    $('tgt-lang').value=nt; S.tgt=nt;
+function extractFrame() {
+  const w = vid.videoWidth || 640;
+  const h = vid.videoHeight || 480;
+  cvsHid.width = w;
+  cvsHid.height = h;
+  ctxHid.drawImage(vid, 0, 0, w, h);
+  const data = ctxHid.getImageData(0, 0, w, h);
+  const px = data.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const v = Math.min(255, Math.max(0, ((0.299 * px[i] + 0.587 * px[i+1] + 0.114 * px[i+2]) - 128) * 1.5 + 128));
+    px[i] = px[i+1] = px[i+2] = v;
   }
-});
-
-function setProg(pct, msg){
-  $('pfill').style.width = pct+'%';
-  $('ppct').textContent  = Math.round(pct)+'%';
-  $('pmsg').textContent  = msg;
+  ctxHid.putImageData(data, 0, 0);
+  return cvsHid;
 }
-
-function captureFrame(){
-  const w = video.videoWidth  || 640;
-  const h = video.videoHeight || 480;
-  capCvs.width = w; capCvs.height = h;
-  capCtx.drawImage(video, 0, 0, w, h);
-  return capCvs;
+function updateProgress(val, msg) {
+  dom('p-bar').style.width = `${val}%`;
+  dom('pct-val').textContent = `${Math.round(val)}%`;
+  dom('p-text').textContent = msg;
 }
-
-function preprocessCanvas(src){
-  const w = src.width, h = src.height;
-  const dst = document.createElement('canvas');
-  dst.width = w; dst.height = h;
-  const ctx = dst.getContext('2d');
-
-  ctx.drawImage(src, 0, 0);
-
-  const id = ctx.getImageData(0, 0, w, h);
-  const d  = id.data;
-  for(let i=0; i<d.length; i+=4){
-    const avg = 0.299*d[i] + 0.587*d[i+1] + 0.114*d[i+2];
-    const v = Math.min(255, Math.max(0, (avg - 128) * 1.4 + 128));
-    d[i]=d[i+1]=d[i+2]=v;
-  }
-  ctx.putImageData(id, 0, 0);
-  return dst;
-}
-
-async function runOCR(canvas){
-  setProg(0,'Initialising Tesseract…');
-  const el = $('ocr-out');
-  el.innerHTML='<span class="ph">Analysing image…</span>';
-  el.classList.remove('on');
-
-  const processed = preprocessCanvas(canvas);
-
-  try{
-    const res = await Tesseract.recognize(processed, S.src, {
+async function processFrame(canvas) {
+  updateProgress(0, 'Initializing Engine');
+  const out = dom('out-ocr');
+  out.className = 'data-output empty';
+  out.textContent = 'Analyzing...';
+  try {
+    const lang = dom('lang-in').value;
+    const res = await Tesseract.recognize(canvas, lang, {
       logger: m => {
-        const map = {
-          'loading tesseract core':      [5,  'Loading OCR engine…'],
-          'initializing tesseract':      [10, 'Initialising…'],
-          'loading language traineddata':[20, `Loading language data (${S.src})…`],
-          'initializing api':            [30, 'Preparing recognition…'],
-        };
-        if(m.status==='recognizing text'){
-          setProg(30+m.progress*70, `Recognising… ${Math.round(30+m.progress*70)}%`);
-        } else if(map[m.status]){
-          const [p,msg]=map[m.status]; setProg(p,msg);
+        if (m.status === 'recognizing text') {
+          updateProgress(30 + m.progress * 70, 'Extracting metrics');
+        } else {
+          updateProgress(15, 'Loading core data');
         }
       }
     });
-
     const raw = res.data.text || '';
-
-    const text = raw
-      .replace(/[^\x20-\x7E\n\u00C0-\u024F\u0900-\u097F]/g,'')
-      .replace(/[ \t]{2,}/g,' ')
-      .replace(/\n{3,}/g,'\n\n')
-      .trim();
-
-    setProg(100, text.length>1 ? 'Recognition complete ✓' : 'No text detected — try clearer image.');
-
-    if(text.length > 1){
-      el.textContent = text;
-      el.classList.add('on');
-      S.ocrText = text;
-      return text;
+    const conf = res.data.confidence || 0;
+    const clean = raw.replace(/[^\x20-\x7E\n\u00C0-\u024F\u0900-\u097F]/g, '').replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    const valid = /[a-zA-Z]{2,}/.test(clean);
+    if (clean.length > 2 && conf > 45 && valid) {
+      updateProgress(100, `Complete (Conf: ${Math.round(conf)}%)`);
+      out.className = 'data-output';
+      out.textContent = clean;
+      S.txtSrc = clean;
+      return clean;
     } else {
-      el.innerHTML='<span class="ph">No readable text found. Try better lighting, less glare, closer distance.</span>';
-      S.ocrText='';
-      return '';
+      updateProgress(100, 'Signal too weak. Aborting.');
+      out.textContent = 'Insufficient data clarity. Adjust focus and lighting.';
+      S.txtSrc = '';
+      return null;
     }
-  }catch(e){
-    setProg(0,'OCR error: '+e.message);
-    el.innerHTML=`<span class="ph">Error: ${e.message}</span>`;
-    S.ocrText=''; return '';
+  } catch (e) {
+    updateProgress(0, 'Engine failure');
+    out.textContent = 'Critical error during analysis.';
+    return null;
   }
 }
-
-$('cap-btn').addEventListener('click', async ()=>{
-  if(!S.camOn) return;
-  
-  if(video.paused) {
-    video.play();
-    ovrCtx.clearRect(0,0,ovrCvs.width,ovrCvs.height);
-    $('cap-btn').textContent = '⊙ CAPTURE';
-    setSt('LIVE','live');
+const codes = { eng: 'en', fra: 'fr', deu: 'de', spa: 'es', ita: 'it' };
+async function synthesizeText(text) {
+  const tOut = dom('out-trans');
+  tOut.className = 'data-output empty';
+  tOut.textContent = 'Synthesizing...';
+  ['btn-copy', 'btn-share', 'btn-tog-ovr'].forEach(id => dom(id).disabled = true);
+  try {
+    const src = codes[dom('lang-in').value] || 'en';
+    const tgt = dom('lang-out').value;
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${tgt}&dt=t&q=${encodeURIComponent(text)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    let final = '';
+    for (let i = 0; i < data[0].length; i++) {
+      if (data[0][i][0]) final += data[0][i][0];
+    }
+    tOut.className = 'data-output';
+    tOut.textContent = final;
+    S.txtTgt = final;
+    ['btn-copy', 'btn-share', 'btn-tog-ovr'].forEach(id => dom(id).disabled = false);
+    if (S.showHUD) renderHUD(final);
+  } catch (e) {
+    tOut.textContent = 'Network synthesis failed.';
+  }
+}
+function renderHUD(text) {
+  syncCanvas();
+  const w = cvsOvr.width, h = cvsOvr.height;
+  ctxOvr.clearRect(0, 0, w, h);
+  if (!text) return;
+  const fs = Math.max(14, Math.min(20, w / 35));
+  ctxOvr.font = `600 ${fs}px 'Inter', sans-serif`;
+  const maxW = w * 0.8;
+  const lines = [];
+  let cur = '';
+  for (const word of text.split(' ')) {
+    const test = cur ? cur + ' ' + word : word;
+    if (ctxOvr.measureText(test).width > maxW - 40) { lines.push(cur); cur = word; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  const boxH = 40 + lines.length * (fs * 1.5);
+  const boxX = (w - maxW) / 2;
+  const boxY = h - boxH - 30;
+  ctxOvr.fillStyle = 'rgba(30, 12, 9, 0.95)';
+  ctxOvr.beginPath();
+  ctxOvr.roundRect(boxX, boxY, maxW, boxH, 12);
+  ctxOvr.fill();
+  ctxOvr.strokeStyle = '#e63925';
+  ctxOvr.lineWidth = 2;
+  ctxOvr.beginPath();
+  ctxOvr.moveTo(boxX + 20, boxY);
+  ctxOvr.lineTo(boxX + maxW - 20, boxY);
+  ctxOvr.stroke();
+  ctxOvr.fillStyle = '#f9ba15';
+  ctxOvr.font = `700 ${fs - 4}px 'Syne', sans-serif`;
+  ctxOvr.fillText('DATA STREAM', boxX + 20, boxY + 25);
+  ctxOvr.fillStyle = '#fdf2f0';
+  ctxOvr.font = `400 ${fs}px 'Inter', sans-serif`;
+  lines.forEach((l, i) => ctxOvr.fillText(l, boxX + 20, boxY + 55 + i * (fs * 1.5)));
+}
+dom('btn-power').addEventListener('click', togglePower);
+dom('btn-trigger').addEventListener('click', async () => {
+  if (!S.active) return;
+  const btn = dom('btn-trigger');
+  if (vid.paused) {
+    vid.play();
+    ctxOvr.clearRect(0, 0, cvsOvr.width, cvsOvr.height);
+    btn.textContent = 'Capture';
+    setStatus('Online', 'live');
     return;
   }
-
-  if(S.busy) return;
-  S.busy = true;
-  $('cap-btn').disabled = true;
-  $('cap-btn').textContent = '⧖ SCANNING…';
-  setSt('SCANNING','busy');
-
-  const fl=$('flash');
-  fl.classList.add('on');
-  setTimeout(()=>fl.classList.remove('on'),160);
-
-  video.pause();
-
-  const canvas = captureFrame();
-  const text   = await runOCR(canvas);
-  if(text) await runTranslation(text);
-  else finishCap();
-});
-
-function finishCap(){
-  S.busy=false;
-  $('cap-btn').disabled=false;
-  if(video.paused) {
-    $('cap-btn').textContent='↻ RESUME';
-    setSt('PAUSED', 'idle');
+  if (S.processing) return;
+  S.processing = true;
+  btn.disabled = true;
+  btn.textContent = 'Processing';
+  setStatus('Analyzing', 'busy');
+  vid.pause();
+  const cvs = extractFrame();
+  const txt = await processFrame(cvs);
+  if (txt) await synthesizeText(txt);
+  S.processing = false;
+  btn.disabled = false;
+  if (vid.paused) {
+    btn.textContent = 'Resume';
+    setStatus('Paused', '');
   } else {
-    $('cap-btn').textContent='⊙ CAPTURE';
-    setSt(S.camOn?'LIVE':'STANDBY', S.camOn?'live':'idle');
+    btn.textContent = 'Capture';
+    setStatus('Online', 'live');
   }
-}
-
-const T2I = {eng:'en',fra:'fr',deu:'de',spa:'es',ita:'it',por:'pt',hin:'hi'};
-
-async function doTranslate(text, src, tgt){
-  const sourceLang = T2I[src] || 'en';
-  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${tgt}&dt=t&q=${encodeURIComponent(text)}`;
-  
-  try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Network error');
-    const data = await response.json();
-    let translatedText = '';
-    for (let i = 0; i < data[0].length; i++) {
-      if (data[0][i][0]) translatedText += data[0][i][0];
-    }
-    return translatedText;
-  } catch (e) {
-    throw new Error('Translation failed. Check internet connection.');
-  }
-}
-
-async function runTranslation(text){
-  const el=$('tr-out');
-  el.innerHTML=`<div class="tling">Translating <div class="dots"><span></span><span></span><span></span></div></div>`;
-  el.classList.remove('on');
-  setSt('TRANSLATING','busy');
-  ['copy-btn','share-btn','ovr-btn'].forEach(id=>$(id).disabled=true);
-
-  try{
-    const result = await doTranslate(text, S.src, S.tgt);
-    el.textContent = result;
-    el.classList.add('on');
-    S.tranText = result;
-    ['copy-btn','share-btn','ovr-btn'].forEach(id=>$(id).disabled=false);
-    if(S.ovrOn) drawOvr(result);
-    saveHist(text, result);
-  }catch(e){
-    el.innerHTML=`<span class="ph">⚠ ${e.message}</span>`;
-    S.tranText='';
-  }
-  finishCap();
-}
-
-function drawOvr(text){
-  syncOvr();
-  const W=ovrCvs.width, H=ovrCvs.height;
-  ovrCtx.clearRect(0,0,W,H);
-  if(!text) return;
-
-  const PAD=16, LPAD=14;
-  const FS=Math.max(13,Math.min(16,W/38));
-  const LH=FS*1.55;
-  const MAXW=W*0.88;
-
-  ovrCtx.font=`${FS}px 'Outfit',sans-serif`;
-
-  const lines=[]; let cur='';
-  for(const w of text.split(' ')){
-    const t=cur?cur+' '+w:w;
-    if(ovrCtx.measureText(t).width>MAXW-LPAD*2){lines.push(cur);cur=w;}
-    else cur=t;
-  }
-  if(cur) lines.push(cur);
-
-  const LBH=18;
-  const boxH=LBH+lines.length*LH+PAD*2;
-  const boxW=MAXW;
-  const boxX=(W-boxW)/2;
-  const boxY=H-boxH-14;
-
-  ovrCtx.shadowColor='rgba(0,0,0,.55)';
-  ovrCtx.shadowBlur=18;
-
-  ovrCtx.fillStyle='rgba(6,10,16,.9)';
-  rrect(ovrCtx,boxX,boxY,boxW,boxH,10);
-  ovrCtx.fill();
-  ovrCtx.shadowBlur=0;
-
-  ovrCtx.strokeStyle='#c8f135';
-  ovrCtx.lineWidth=2;
-  ovrCtx.beginPath();
-  ovrCtx.moveTo(boxX+14,boxY+1);
-  ovrCtx.lineTo(boxX+boxW-14,boxY+1);
-  ovrCtx.stroke();
-
-  const tgtName=$('tgt-lang').options[$('tgt-lang').selectedIndex].text.replace('→ ','');
-  ovrCtx.font=`500 ${Math.max(10,FS-4)}px 'JetBrains Mono',monospace`;
-  ovrCtx.fillStyle='#c8f135';
-  ovrCtx.fillText(`TRANSLATED → ${tgtName.toUpperCase()}`,boxX+LPAD,boxY+PAD+10);
-
-  ovrCtx.font=`${FS}px 'Outfit',sans-serif`;
-  ovrCtx.fillStyle='#ffffff';
-  lines.forEach((l,i)=>ovrCtx.fillText(l,boxX+LPAD,boxY+PAD+LBH+(i+1)*LH));
-}
-
-function rrect(ctx,x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y);
-  ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
-  ctx.closePath();
-}
-
-$('copy-btn').addEventListener('click', ()=>{
-  if(!S.tranText) return;
-  navigator.clipboard.writeText(S.tranText)
-    .then(()=>toast('Copied ✓'))
-    .catch(()=>{ 
-      const t=document.createElement('textarea');
-      t.value=S.tranText;document.body.appendChild(t);
-      t.select();document.execCommand('copy');t.remove();
-      toast('Copied ✓');
-    });
 });
-
-$('share-btn').addEventListener('click', async ()=>{
-  if(!S.tranText) return;
-  const p={title:'LinguaLens',text:`Original:\n${S.ocrText}\n\nTranslated:\n${S.tranText}`};
-  if(navigator.share){try{await navigator.share(p)}catch(_){}}
-  else{navigator.clipboard.writeText(p.text);toast('Copied for sharing ✓');}
-});
-
-$('ovr-btn').addEventListener('click', ()=>{
-  S.ovrOn=!S.ovrOn;
-  $('ovr-btn').textContent=S.ovrOn?'⊞ Overlay':'⊟ Hidden';
-  if(S.ovrOn && S.tranText) drawOvr(S.tranText);
-  else ovrCtx.clearRect(0,0,ovrCvs.width,ovrCvs.height);
-  toast(S.ovrOn?'Overlay on':'Overlay off');
-});
-
-function saveHist(o,t){
-  S.history.unshift({o:o.slice(0,140),t:t.slice(0,140),src:S.src,tgt:S.tgt,ts:Date.now()});
-  if(S.history.length>5) S.history.pop();
-  localStorage.setItem('ll_h',JSON.stringify(S.history));
-  renderHist();
-}
-
-function renderHist(){
-  const el=$('hist');
-  if(!S.history.length){el.innerHTML='<div class="he">No translations yet.</div>';return;}
-  el.innerHTML=S.history.map((h,i)=>`
-    <div class="hi" data-i="${i}">
-      <div class="hl">${h.src}→${h.tgt}</div>
-      <div class="ht">
-        <div class="ho">${esc(h.o)}</div>
-        <div class="htr">${esc(h.t)}</div>
-      </div>
-    </div>`).join('');
-  el.querySelectorAll('.hi').forEach(e=>{
-    e.addEventListener('click',()=>{
-      const h=S.history[+e.dataset.i];
-      $('ocr-out').textContent=h.o; $('ocr-out').classList.add('on');
-      $('tr-out').textContent=h.t;  $('tr-out').classList.add('on');
-      S.ocrText=h.o; S.tranText=h.t;
-      ['copy-btn','share-btn','ovr-btn'].forEach(id=>$(id).disabled=false);
-      if(S.ovrOn) drawOvr(h.t);
-    });
+dom('btn-copy').addEventListener('click', () => {
+  if (!S.txtTgt) return;
+  navigator.clipboard.writeText(S.txtTgt).then(() => notify('Copied to clipboard')).catch(() => {
+    const t = document.createElement('textarea');
+    t.value = S.txtTgt; document.body.appendChild(t);
+    t.select(); document.execCommand('copy'); t.remove();
+    notify('Copied to clipboard');
   });
-}
-
-$('clr-btn').addEventListener('click',()=>{
-  S.history=[];localStorage.removeItem('ll_h');
-  renderHist();toast('History cleared');
 });
-
-const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-const tEl=$('toast'); let tT;
-function toast(msg){
-  tEl.textContent=msg; tEl.classList.add('show');
-  clearTimeout(tT); tT=setTimeout(()=>tEl.classList.remove('show'),2500);
-}
-
-renderHist();
-setSt('STANDBY','idle');
-window.addEventListener('resize',syncOvr);
+dom('btn-share').addEventListener('click', async () => {
+  if (!S.txtTgt) return;
+  const p = { title: 'Analysis', text: `${S.txtSrc}\n\n${S.txtTgt}` };
+  if (navigator.share) { try { await navigator.share(p); } catch (e) {} }
+  else { navigator.clipboard.writeText(p.text); notify('Data copied for routing'); }
+});
+dom('btn-tog-ovr').addEventListener('click', () => {
+  S.showHUD = !S.showHUD;
+  if (S.showHUD && S.txtTgt) renderHUD(S.txtTgt);
+  else ctxOvr.clearRect(0, 0, cvsOvr.width, cvsOvr.height);
+  notify(S.showHUD ? 'HUD Enabled' : 'HUD Disabled');
+});
+window.addEventListener('resize', syncCanvas);
 </script>
 </body>
 </html>
